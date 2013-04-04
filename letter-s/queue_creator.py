@@ -3,7 +3,7 @@ import sys
 import requests
 
 
-_endpoint = 'http://166.78.143.130:8080/'
+_endpoint = 'http://'
 
 
 if __name__ == "__main__":

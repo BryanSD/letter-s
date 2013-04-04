@@ -5,7 +5,7 @@ import time
 import requests
 
 
-_endpoint = 'http://166.78.143.130:80/'
+_endpoint = 'http://'
 _uuid = '3d3d67f0-9bd5-11e2-9e96-0800200c9a66'
 
 
@@ -14,7 +14,7 @@ if __name__ == "__main__":
     headers = {'Client-ID': _uuid}
 
     s = socket.socket()
-    s.connect(('166.78.61.156', 2023))
+    s.connect(('IP_ADDRESS', 0))
 
     start_time = time.time()
     messages_created = 0
