@@ -1,14 +1,20 @@
 import sys
 
-import requests
-
-
-_endpoint = 'http://'
+from marconiclient import client
 
 
 if __name__ == "__main__":
-    uri = _endpoint + 'v1/1/queues/%s' % sys.argv[1]
-    response = requests.put(uri, data='{}')
+    if len(sys.argv) < 5:
+        raise Exception(
+            'Please provide: client_id, auth_url, user, key, endpoint')
 
-    if (response.status_code not in [201, 204]):
-        raise Exception('Queue could not be created.')
+    conn = client.Connection(sys.argv[1],
+                             sys.argv[2],
+                             sys.argv[3],
+                             sys.argv[4],
+                             endpoint=sys.argv[5],
+                             token='_')
+    conn.connect()
+
+    queue_tasks = conn.create_queue('openstack-tasks', 0)
+    queue_responses = conn.create_queue('openstack-responses', 0)

@@ -2,30 +2,35 @@ import socket
 import sys
 import time
 
-import requests
-
-
-_endpoint = 'http://'
-_uuid = '3d3d67f0-9bd5-11e2-9e96-0800200c9a66'
+from marconiclient import client
 
 
 if __name__ == "__main__":
-    uri = _endpoint + 'v1/1/queues/%s/messages' % sys.argv[1]
-    headers = {'Client-ID': _uuid}
+    if len(sys.argv) < 5:
+        raise Exception(
+            'Please provide: client_id, auth_url, user,',
+            'key, endpoint, graphite-ip, graphite-port')
+
+    conn = client.Connection(sys.argv[1],
+                             sys.argv[2],
+                             sys.argv[3],
+                             sys.argv[4],
+                             endpoint=sys.argv[5],
+                             token='_')
+    conn.connect()
+
+    queue = conn.get_queue('openstack-tasks')
+
+    headers = {'Client-ID': sys.argv[1]}
 
     s = socket.socket()
-    s.connect(('IP_ADDRESS', 0))
+    s.connect((sys.argv[6], int(sys.argv[7])))
 
     start_time = time.time()
     messages_created = 0
     while True:
-        response = requests.post(uri,
-                                 headers=headers,
-                                 data='[{"ttl": 5, "body": {"test": 1}}]')
+        queue.post_message('{"test": true}', 5)
         messages_created += 1
-
-        if (response.status_code != 201):
-            raise Exception('Message could not be posted.')
 
         time_marker = time.time()
         time_diff = time_marker - start_time
@@ -37,7 +42,7 @@ if __name__ == "__main__":
                 messages_adjusted, int(time_marker))
             s.sendall(graphite_message)
 
-            start_time = time.time()
-            messages_created = 0
+            start_time = time_marker
+            messages_created = messages_created - messages_adjusted
 
     s.close()
