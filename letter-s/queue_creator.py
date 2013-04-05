@@ -18,3 +18,4 @@ if __name__ == "__main__":
 
     queue_tasks = conn.create_queue('openstack-tasks', 0)
     queue_responses = conn.create_queue('openstack-responses', 0)
+    queue_rate_controller = conn.create_queue('openstack-rate-controller', 0)
