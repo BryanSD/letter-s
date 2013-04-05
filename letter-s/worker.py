@@ -1,3 +1,10 @@
+import socket
+import sys
+import time
+
+from marconiclient import client
+
+
 def work_on_it(operation, operand):
     if (operation == 'prime'):
         return work_on_prime(operand)
@@ -32,5 +39,32 @@ def work_on_fibonacci(number):
 
 
 if __name__ == "__main__":
-    work_on_it('prime', 1000)
-    work_on_it('fibonacci', 13)
+    if len(sys.argv) < 8:
+        raise Exception(
+            'Please provide: client_id, auth_url, user,',
+            'key, endpoint, graphite-ip, graphite-port')
+
+    conn = client.Connection(sys.argv[1],
+                             sys.argv[2],
+                             sys.argv[3],
+                             sys.argv[4],
+                             endpoint=sys.argv[5],
+                             token='_')
+    conn.connect()
+
+    queue = conn.get_queue('openstack-tasks')
+
+    s = socket.socket()
+    s.connect((sys.argv[6], int(sys.argv[7])))
+
+    work_item_count = 0
+    while True:
+        work_items = queue.claim_messages()
+
+        # TODO(bryansd): the work
+
+        graphite_message = 'openstack.workers.result.sum %d %d\n' % (
+            work_item_count, int(time.time()))
+        s.sendall(graphite_message)
+
+    s.close()
