@@ -1,3 +1,5 @@
+import json
+import random
 import socket
 import sys
 import time
@@ -6,7 +8,7 @@ from marconiclient import client
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 5:
+    if len(sys.argv) < 8:
         raise Exception(
             'Please provide: client_id, auth_url, user,',
             'key, endpoint, graphite-ip, graphite-port')
@@ -21,15 +23,21 @@ if __name__ == "__main__":
 
     queue = conn.get_queue('openstack-tasks')
 
-    headers = {'Client-ID': sys.argv[1]}
-
     s = socket.socket()
     s.connect((sys.argv[6], int(sys.argv[7])))
+
+    job_types = {0: 'prime', 1: 'fibonacci'}
 
     start_time = time.time()
     messages_created = 0
     while True:
-        queue.post_message('{"test": true}', 5)
+        job_type = random.randint(0, 1)
+        start_value = random.randint(0, 1000)
+
+        message = {"job_type": job_types[job_type],
+                   "start_value": start_value}
+
+        queue.post_message(json.dumps(message), 60)
         messages_created += 1
 
         time_marker = time.time()

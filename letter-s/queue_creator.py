@@ -4,7 +4,7 @@ from marconiclient import client
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 5:
+    if len(sys.argv) < 6:
         raise Exception(
             'Please provide: client_id, auth_url, user, key, endpoint')
 
