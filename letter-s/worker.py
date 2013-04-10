@@ -1,3 +1,5 @@
+import copy
+import json
 import socket
 import sys
 import time
@@ -27,6 +29,8 @@ def work_on_prime(number):
 
     print 'Greatest prime under %d: %d' % (number, last_prime)
 
+    return last_prime
+
 
 def work_on_fibonacci(number):
     n_2 = 0
@@ -36,6 +40,8 @@ def work_on_fibonacci(number):
         n_2, n_1 = n_1, n_2 + n_1
 
     print 'Fibonacci number %d: %d' % (number, n_1)
+
+    return n_1
 
 
 if __name__ == "__main__":
@@ -52,19 +58,33 @@ if __name__ == "__main__":
                              token='_')
     conn.connect()
 
-    queue = conn.get_queue('openstack-tasks')
+    queue_tasks = conn.get_queue('openstack-tasks')
+    queue_results = conn.get_queue('openstack-responses')
 
     s = socket.socket()
     s.connect((sys.argv[6], int(sys.argv[7])))
 
     work_item_count = 0
     while True:
-        work_items = queue.claim_messages()
+        claim = queue_tasks.claim(ttl=60, grace=60)
 
-        # TODO(bryansd): the work
+        for msg in claim.messages:
+            msg_body = json.loads(msg['body'])
 
-        graphite_message = 'openstack.workers.result.sum %d %d\n' % (
-            work_item_count, int(time.time()))
-        s.sendall(graphite_message)
+            result_msg = copy.copy(msg_body)
+
+            if msg_body['job_type'] == 'fibonacci':
+                result_msg['result'] = work_on_fibonacci(msg_body['start_value'])
+            elif msg_body['job_type'] == 'prime':
+                result_msg['result'] = work_on_prime(msg_body['start_value'])
+
+            time.sleep(2)
+            msg.delete()
+            queue_results.post_message({"test": 1}, 60)
+            work_item_count += 1
+
+            graphite_message = 'openstack.workers.result.sum %d %d\n' % (
+                work_item_count, int(time.time()))
+            s.sendall(graphite_message)
 
     s.close()

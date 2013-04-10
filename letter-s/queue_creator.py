@@ -12,10 +12,10 @@ if __name__ == "__main__":
                              sys.argv[2],
                              sys.argv[3],
                              sys.argv[4],
-                             endpoint=sys.argv[5],
-                             token='_')
-    conn.connect()
+                             endpoint=sys.argv[5])
+    conn.connect('_')
 
-    queue_tasks = conn.create_queue('openstack-tasks', 0)
-    queue_responses = conn.create_queue('openstack-responses', 0)
-    queue_rate_controller = conn.create_queue('openstack-rate-controller', 0)
+    conn.create_queue('openstack-tasks', 0)
+    conn.create_queue('openstack-responses', 0)
+    conn.create_queue('openstack-producer-controller', 0)
+    conn.create_queue('openstack-worker-controller', 0)
