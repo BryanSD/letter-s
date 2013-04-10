@@ -15,9 +15,8 @@ if __name__ == "__main__":
                              sys.argv[2],
                              sys.argv[3],
                              sys.argv[4],
-                             endpoint=sys.argv[5],
-                             token='_')
-    conn.connect()
+                             endpoint=sys.argv[5])
+    conn.connect('_')
 
     queue = conn.get_queue('openstack-tasks')
 
@@ -40,8 +39,6 @@ if __name__ == "__main__":
         if (time_diff >= 1):
             # Adjust for times greater than 1 second
             messages_adjusted = int((1 / time_diff) * messages_created)
-
-            print messages_adjusted
 
             graphite_message = 'openstack.queue.work.rate %d %d\n' % (
                 messages_adjusted, int(time_marker))
