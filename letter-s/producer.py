@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     def get_production_information():
         global rate, ttl
-        queue = conn.create_queue('openstack-producer-controller')
+        queue = conn.get_queue('openstack-producer-controller')
 
         while True:
             messages = list(queue.get_messages(restart=True))
@@ -46,15 +46,11 @@ if __name__ == "__main__":
     def post_work():
         global rate, ttl, messages_created
 
-        queue = conn.create_queue('openstack-tasks')
+        queue = conn.get_queue('openstack-tasks')
         job_types = {0: 'prime', 1: 'fibonacci'}
 
         while True:
-            if rate == 0:
-                eventlet.sleep(1)
-                continue
-            else:
-                eventlet.sleep(1.0 / rate)
+            start_time = time.time()
 
             job_type = random.randint(0, 1)
             start_value = random.randint(0, 1000)
@@ -65,6 +61,14 @@ if __name__ == "__main__":
             queue.post_message(message, ttl)
             messages_created += 1
 
+            if rate == 0:
+                eventlet.sleep(1)
+                continue
+            else:
+                elapsed_time = time.time() - start_time
+                sleep_time = (1.0 / rate) - elapsed_time
+                eventlet.sleep(max(sleep_time, 0))
+
     pool.spawn_n(post_work)
 
     def post_stats():
@@ -74,13 +78,14 @@ if __name__ == "__main__":
         s.connect((sys.argv[2], int(sys.argv[3])))
 
         while True:
+            start_time = time.time()
             graphite_message = 'openstack.producer.worker.rate %d %d\n' % (
                 messages_created, int(time.time()))
             s.sendall(graphite_message)
 
             messages_created = 0
 
-            eventlet.sleep(1)
+            eventlet.sleep(1 - (time.time() - start_time))
 
         s.close()
 

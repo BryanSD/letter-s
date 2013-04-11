@@ -1,5 +1,4 @@
 import copy
-import json
 import socket
 import sys
 import time
@@ -97,9 +96,11 @@ if __name__ == "__main__":
             result_msg = copy.copy(msg_body)
 
             if msg_body['job_type'] == 'fibonacci':
-                result_msg['result'] = str(work_on_fibonacci(msg_body['start_value']))
+                result_msg['result'] = str(work_on_fibonacci(
+                    msg_body['start_value']))
             elif msg_body['job_type'] == 'prime':
-                result_msg['result'] = str(work_on_prime(msg_body['start_value']))
+                result_msg['result'] = str(work_on_prime(
+                    msg_body['start_value']))
 
             msg.delete()
             queue_results.post_message(result_msg, ttl)
