@@ -4,15 +4,14 @@ from marconiclient import client
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 6:
-        raise Exception(
-            'Please provide: client_id, auth_url, user, key, endpoint')
+    if len(sys.argv) < 2:
+        raise Exception('Please provide: Marconi endpoint')
 
-    conn = client.Connection(sys.argv[1],
-                             sys.argv[2],
-                             sys.argv[3],
-                             sys.argv[4],
-                             endpoint=sys.argv[5])
+    conn = client.Connection('0',
+                             'http://example.com',
+                             'marconi-demo',
+                             'password',
+                             endpoint=sys.argv[1])
     conn.connect('_')
 
     conn.create_queue('openstack-tasks', 0)

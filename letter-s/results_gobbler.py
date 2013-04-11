@@ -5,18 +5,15 @@ from marconiclient import client
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 6:
-        raise Exception(
-            """Please provide: client_id, auth_url, user,
-            key, endpoint""")
+    if len(sys.argv) < 2:
+        raise Exception("Please provide: Marconi endpoint")
 
-    conn = client.Connection(sys.argv[1],
-                             sys.argv[2],
-                             sys.argv[3],
-                             sys.argv[4],
-                             endpoint=sys.argv[5],
-                             token='_')
-    conn.connect()
+    conn = client.Connection('3',
+                             'http://example.com',
+                             'marconi-demo',
+                             'password',
+                             endpoint=sys.argv[1])
+    conn.connect('_')
 
     queue = conn.get_queue('openstack-responses')
 
@@ -26,7 +23,6 @@ if __name__ == "__main__":
 
         if message_count == 0:
             print 'Gobbled 0 messages'
-            time.sleep(1)
             continue
 
         for message in messages:

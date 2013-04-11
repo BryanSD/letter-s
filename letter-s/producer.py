@@ -1,4 +1,3 @@
-import json
 import random
 import socket
 import sys
@@ -10,25 +9,23 @@ from marconiclient import client
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 8:
+    if len(sys.argv) < 4:
         raise Exception(
-            'Please provide: client_id, auth_url, user,',
-            'key, endpoint, graphite-ip, graphite-port')
+            'Please provide: Marconi endpoint, Graphite IP, Graphite Port')
 
-    conn = client.Connection(sys.argv[1],
-                             sys.argv[2],
-                             sys.argv[3],
-                             sys.argv[4],
-                             endpoint=sys.argv[5])
+    conn = client.Connection('1',
+                             'http://example.com',
+                             'marconi-demo',
+                             'password',
+                             endpoint=sys.argv[1])
     conn.connect('_')
 
     pool = GreenPool()
 
-    rate, ttl = 1, 60
+    rate, ttl = 0, 60
     messages_created = 0
 
     def get_production_information():
-
         global rate, ttl
         queue = conn.get_queue('openstack-producer-controller')
 
@@ -37,7 +34,8 @@ if __name__ == "__main__":
 
             if len(messages) > 0:
                 last_message = messages[-1]
-                rate, ttl = last_message['body']['rate'], last_message['body']['ttl']
+                rate = last_message['body']['rate']
+                ttl = last_message['body']['ttl']
             else:
                 rate, ttl = 10, 60
 
@@ -62,7 +60,7 @@ if __name__ == "__main__":
             start_value = random.randint(0, 1000)
 
             message = {"job_type": job_types[job_type],
-                "start_value": start_value}
+                       "start_value": start_value}
 
             queue.post_message(message, ttl)
             messages_created += 1
@@ -73,7 +71,7 @@ if __name__ == "__main__":
         global messages_created
 
         s = socket.socket()
-        s.connect((sys.argv[6], int(sys.argv[7])))
+        s.connect((sys.argv[2], int(sys.argv[3])))
 
         while True:
             graphite_message = 'openstack.producer.worker.rate %d %d\n' % (
@@ -85,7 +83,7 @@ if __name__ == "__main__":
             eventlet.sleep(1)
 
         s.close()
-    
+
     pool.spawn_n(post_stats)
 
     pool.waitall()

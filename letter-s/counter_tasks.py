@@ -6,22 +6,21 @@ from marconiclient import client
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 8:
+    if len(sys.argv) < 4:
         raise Exception(
-            'Please provide: client_id, auth_url, user,',
-            'key, endpoint, graphite-ip, graphite-port')
+            'Please provide: Marconi endpoint, Graphite IP, Graphite Port')
 
-    conn = client.Connection(sys.argv[1],
-                             sys.argv[2],
-                             sys.argv[3],
-                             sys.argv[4],
-                             endpoint=sys.argv[5])
+    conn = client.Connection('2',
+                             'http://example.com',
+                             'marconi-demo',
+                             'password',
+                             endpoint=sys.argv[1])
     conn.connect('_')
 
     queue = conn.get_queue('openstack-tasks')
 
     s = socket.socket()
-    s.connect((sys.argv[6], int(sys.argv[7])))
+    s.connect((sys.argv[2], int(sys.argv[3])))
 
     start_time = time.time()
     messages_created = 0

@@ -4,6 +4,8 @@ import socket
 import sys
 import time
 
+import eventlet
+from eventlet import GreenPool
 from marconiclient import client
 
 
@@ -45,42 +47,62 @@ def work_on_fibonacci(number):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 8:
+    if len(sys.argv) < 4:
         raise Exception(
-            'Please provide: client_id, auth_url, user,',
-            'key, endpoint, graphite-ip, graphite-port')
+            'Please provide: Marconi endpoint, Graphite IP, Graphite Port')
 
-    conn = client.Connection(sys.argv[1],
-                             sys.argv[2],
-                             sys.argv[3],
-                             sys.argv[4],
-                             endpoint=sys.argv[5],
-                             token='_')
-    conn.connect()
+    conn = client.Connection('2',
+                             'http://example.com',
+                             'marconi-demo',
+                             'password',
+                             endpoint=sys.argv[1])
+    conn.connect('_')
+
+    pool = GreenPool()
+
+    ttl = 60
+
+    def get_worker_information():
+        global ttl
+
+        queue = conn.get_queue('openstack-worker-controller')
+
+        while True:
+            messages = list(queue.get_messages(restart=True))
+
+            if len(messages) > 0:
+                last_message = messages[-1]
+                ttl = last_message['body']['ttl']
+            else:
+                ttl = 60
+
+            eventlet.sleep(1)
+
+    pool.spawn_n(get_worker_information)
 
     queue_tasks = conn.get_queue('openstack-tasks')
     queue_results = conn.get_queue('openstack-responses')
 
     s = socket.socket()
-    s.connect((sys.argv[6], int(sys.argv[7])))
+    s.connect((sys.argv[2], int(sys.argv[3])))
 
     work_item_count = 0
     while True:
         claim = queue_tasks.claim(ttl=60, grace=60)
 
         for msg in claim.messages:
-            msg_body = json.loads(msg['body'])
+            #print claim['ttl']
+            msg_body = msg['body']
 
             result_msg = copy.copy(msg_body)
 
             if msg_body['job_type'] == 'fibonacci':
-                result_msg['result'] = work_on_fibonacci(msg_body['start_value'])
+                result_msg['result'] = str(work_on_fibonacci(msg_body['start_value']))
             elif msg_body['job_type'] == 'prime':
-                result_msg['result'] = work_on_prime(msg_body['start_value'])
+                result_msg['result'] = str(work_on_prime(msg_body['start_value']))
 
-            time.sleep(2)
             msg.delete()
-            queue_results.post_message({"test": 1}, 60)
+            queue_results.post_message(result_msg, ttl)
             work_item_count += 1
 
             graphite_message = 'openstack.workers.result.sum %d %d\n' % (
@@ -88,3 +110,5 @@ if __name__ == "__main__":
             s.sendall(graphite_message)
 
     s.close()
+
+    pool.waitall()
