@@ -14,7 +14,7 @@ if __name__ == "__main__":
                              endpoint=sys.argv[1])
     conn.connect('_')
 
-    conn.create_queue('openstack-tasks', 0)
-    conn.create_queue('openstack-responses', 0)
-    conn.create_queue('openstack-producer-controller', 0)
-    conn.create_queue('openstack-worker-controller', 0)
+    conn.create_queue('openstack-tasks')
+    conn.create_queue('openstack-responses')
+    conn.create_queue('openstack-producer-controller')
+    conn.create_queue('openstack-worker-controller')
