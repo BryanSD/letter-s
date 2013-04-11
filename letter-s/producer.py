@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     def get_production_information():
         global rate, ttl
-        queue = conn.get_queue('openstack-producer-controller')
+        queue = conn.create_queue('openstack-producer-controller')
 
         while True:
             messages = list(queue.get_messages(restart=True))
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     def post_work():
         global rate, ttl, messages_created
 
-        queue = conn.get_queue('openstack-tasks')
+        queue = conn.create_queue('openstack-tasks')
         job_types = {0: 'prime', 1: 'fibonacci'}
 
         while True:
