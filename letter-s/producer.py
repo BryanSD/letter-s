@@ -104,12 +104,14 @@ if __name__ == "__main__":
 
         while True:
             start_time = time.time()
+
             graphite_message = 'openstack.producer.worker.rate %d %d\n' % (
                 messages_created, int(time.time()))
-            s.sendall(graphite_message)
 
-            errors_detected = 0
             messages_created = 0
+            errors_detected = 0
+
+            s.sendall(graphite_message)
 
             eventlet.sleep(1 - (time.time() - start_time))
 

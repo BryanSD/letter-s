@@ -26,7 +26,7 @@ if __name__ == "__main__":
             continue
 
         for message in messages:
-            print message.href
+            # print message.href
             message.delete()
 
         print 'Gobbled %d messages' % message_count

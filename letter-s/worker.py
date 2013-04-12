@@ -28,7 +28,7 @@ def work_on_prime(number):
         if (found_prime):
             last_prime = num
 
-    print 'Greatest prime under %d: %d' % (number, last_prime)
+    # print 'Greatest prime under %d: %d' % (number, last_prime)
 
     return last_prime
 
@@ -40,7 +40,7 @@ def work_on_fibonacci(number):
     for num in list(xrange(number + 1))[2:]:
         n_2, n_1 = n_1, n_2 + n_1
 
-    print 'Fibonacci number %d: %d' % (number, n_1)
+    # print 'Fibonacci number %d: %d' % (number, n_1)
 
     return n_1
 
@@ -60,20 +60,24 @@ if __name__ == "__main__":
     pool = GreenPool()
 
     ttl = 60
+    work_item_count = 0
 
     def get_worker_information():
-        global ttl
-
+        global ttl, work_item_count
         queue = conn.get_queue('openstack-worker-controller')
 
         while True:
-            messages = list(queue.get_messages(restart=True))
+            try:
+                messages = list(queue.get_messages())
 
-            if len(messages) > 0:
-                last_message = messages[-1]
-                ttl = last_message['body']['ttl']
-            else:
-                ttl = 60
+                if len(messages) > 0:
+                    last_message = messages[-1]
+                    ttl = last_message['body']['ttl']
+                    reset_count = last_message['body']['work_item_count']
+                    if reset_count >= 0:
+                        work_item_count = reset_count
+            except Exception as ex:
+                print ex
 
             eventlet.sleep(1)
 
@@ -85,26 +89,29 @@ if __name__ == "__main__":
     s = socket.socket()
     s.connect((sys.argv[2], int(sys.argv[3])))
 
-    work_item_count = 0
+    def post_result_async(original_message, result_message):
+        global queue_results, ttl, work_item_count
+
+        original_message.delete()
+        queue_results.post_message(result_message, ttl)
+        work_item_count += 1
+
     while True:
         claim = queue_tasks.claim(ttl=60, grace=60)
 
+        if len(claim.messages) == 0:
+            time.sleep(1)
+            continue
+
         for msg in claim.messages:
-            #print claim['ttl']
             msg_body = msg['body']
 
             result_msg = copy.copy(msg_body)
 
-            if msg_body['job_type'] == 'fibonacci':
-                result_msg['result'] = str(work_on_fibonacci(
-                    msg_body['start_value']))
-            elif msg_body['job_type'] == 'prime':
-                result_msg['result'] = str(work_on_prime(
-                    msg_body['start_value']))
+            result_msg['result'] = str(work_on_it(msg_body['job_type'],
+                                                  msg_body['start_value']))
 
-            msg.delete()
-            queue_results.post_message(result_msg, ttl)
-            work_item_count += 1
+            pool.spawn_n(post_result_async, msg, result_msg)
 
             graphite_message = 'openstack.workers.result.sum %d %d\n' % (
                 work_item_count, int(time.time()))
