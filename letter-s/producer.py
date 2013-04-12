@@ -30,14 +30,15 @@ if __name__ == "__main__":
         queue = conn.get_queue('openstack-producer-controller')
 
         while True:
-            messages = list(queue.get_messages(restart=True))
+            try:
+                messages = list(queue.get_messages())
 
-            if len(messages) > 0:
-                last_message = messages[-1]
-                rate = last_message['body']['rate']
-                ttl = last_message['body']['ttl']
-            else:
-                rate, ttl = 10, 60
+                if len(messages) > 0:
+                    last_message = messages[-1]
+                    rate = last_message['body']['rate']
+                    ttl = last_message['body']['ttl']
+            except Exception as ex:
+                print ex
 
             eventlet.sleep(1)
 
@@ -50,24 +51,28 @@ if __name__ == "__main__":
         job_types = {0: 'prime', 1: 'fibonacci'}
 
         while True:
-            start_time = time.time()
+            try:
+                if rate == 0:
+                    eventlet.sleep(1)
+                    continue
 
-            job_type = random.randint(0, 1)
-            start_value = random.randint(0, 1000)
+                unadjusted_sleep_time = (1.0 / rate)
+                start_time = time.time()
 
-            message = {"job_type": job_types[job_type],
-                       "start_value": start_value}
+                job_type = random.randint(0, 1)
+                start_value = random.randint(0, 1000)
 
-            queue.post_message(message, ttl)
-            messages_created += 1
+                message = {"job_type": job_types[job_type],
+                           "start_value": start_value}
 
-            if rate == 0:
-                eventlet.sleep(1)
-                continue
-            else:
+                queue.post_message(message, ttl)
+                messages_created += 1
+
                 elapsed_time = time.time() - start_time
-                sleep_time = (1.0 / rate) - elapsed_time
+                sleep_time = unadjusted_sleep_time - elapsed_time
                 eventlet.sleep(max(sleep_time, 0))
+            except Exception as ex:
+                print ex
 
     pool.spawn_n(post_work)
 
