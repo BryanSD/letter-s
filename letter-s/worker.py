@@ -92,7 +92,7 @@ if __name__ == "__main__":
         while True:
             start_time = time.time()
 
-            graphite_message = 'openstack.workers.result.sum %d %d\n' % (
+            graphite_message = 'openstack.worker.result.sum %d %d\n' % (
                 work_item_count, int(time.time()))
             s.sendall(graphite_message)
 
