@@ -82,7 +82,7 @@ if __name__ == "__main__":
             start_time = time.time()
 
             job_type = random.randint(0, 1)
-            start_value = random.randint(0, 1000)
+            start_value = random.randint(0, 100)
 
             message = {"job_type": job_types[job_type],
                        "start_value": start_value}
