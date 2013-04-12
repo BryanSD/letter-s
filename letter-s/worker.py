@@ -83,11 +83,24 @@ if __name__ == "__main__":
 
     pool.spawn_n(get_worker_information)
 
-    queue_tasks = conn.get_queue('openstack-tasks')
-    queue_results = conn.get_queue('openstack-responses')
+    def post_stats():
+        global work_item_count
 
-    s = socket.socket()
-    s.connect((sys.argv[2], int(sys.argv[3])))
+        s = socket.socket()
+        s.connect((sys.argv[2], int(sys.argv[3])))
+
+        while True:
+            start_time = time.time()
+
+            graphite_message = 'openstack.workers.result.sum %d %d\n' % (
+                work_item_count, int(time.time()))
+            s.sendall(graphite_message)
+
+            eventlet.sleep(1 - (time.time() - start_time))
+
+        s.close()
+
+    pool.spawn_n(post_stats)
 
     def post_result_async(original_message, result_message):
         global queue_results, ttl, work_item_count
@@ -95,6 +108,9 @@ if __name__ == "__main__":
         original_message.delete()
         queue_results.post_message(result_message, ttl)
         work_item_count += 1
+
+    queue_tasks = conn.get_queue('openstack-tasks')
+    queue_results = conn.get_queue('openstack-responses')
 
     while True:
         claim = queue_tasks.claim(ttl=60, grace=60)
@@ -112,11 +128,5 @@ if __name__ == "__main__":
                                                   msg_body['start_value']))
 
             pool.spawn_n(post_result_async, msg, result_msg)
-
-            graphite_message = 'openstack.workers.result.sum %d %d\n' % (
-                work_item_count, int(time.time()))
-            s.sendall(graphite_message)
-
-    s.close()
 
     pool.waitall()
