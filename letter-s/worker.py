@@ -105,9 +105,12 @@ if __name__ == "__main__":
     def post_result_async(original_message, result_message):
         global queue_results, ttl, work_item_count
 
-        original_message.delete()
-        queue_results.post_message(result_message, ttl)
-        work_item_count += 1
+        try:
+            original_message.delete()
+            queue_results.post_message(result_message, ttl)
+            work_item_count += 1
+        except Exception as ex:
+            print ex
 
     queue_tasks = conn.get_queue('openstack-tasks')
     queue_results = conn.get_queue('openstack-responses')
