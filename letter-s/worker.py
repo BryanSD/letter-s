@@ -113,20 +113,23 @@ if __name__ == "__main__":
     queue_results = conn.get_queue('openstack-responses')
 
     while True:
-        claim = queue_tasks.claim(ttl=60, grace=60)
+        try:
+            claim = queue_tasks.claim(ttl=60, grace=60)
 
-        if len(claim.messages) == 0:
-            time.sleep(1)
-            continue
+            if len(claim.messages) == 0:
+                time.sleep(1)
+                continue
 
-        for msg in claim.messages:
-            msg_body = msg['body']
+            for msg in claim.messages:
+                msg_body = msg['body']
 
-            result_msg = copy.copy(msg_body)
+                result_msg = copy.copy(msg_body)
 
-            result_msg['result'] = str(work_on_it(msg_body['job_type'],
-                                                  msg_body['start_value']))
+                result_msg['result'] = str(work_on_it(msg_body['job_type'],
+                                                      msg_body['start_value']))
 
-            pool.spawn_n(post_result_async, msg, result_msg)
+                pool.spawn_n(post_result_async, msg, result_msg)
+        except Exception as ex:
+            print ex
 
     pool.waitall()
