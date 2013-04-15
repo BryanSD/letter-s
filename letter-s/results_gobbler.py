@@ -1,32 +1,31 @@
-import sys
-import time
+import argparse
 
 from marconiclient import client
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        raise Exception("Please provide: Marconi endpoint")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('endpoint', help="Marconi endpoint")
+    parser.add_argument('-c', '--continuous', action='store_true',
+                        help='Continuously drain messages')
+    args = parser.parse_args()
 
     conn = client.Connection('3',
                              'http://example.com',
                              'marconi-demo',
                              'password',
-                             endpoint=sys.argv[1])
+                             endpoint=args.endpoint)
     conn.connect('_')
 
     queue = conn.get_queue('openstack-responses')
 
-    while True:
+    first_run = True
+    while first_run or args.continuous:
+        first_run = False
+
         messages = list(queue.get_messages())
         message_count = len(messages)
-
-        if message_count == 0:
-            print 'Gobbled 0 messages'
-            continue
-
         for message in messages:
-            # print message.href
             message.delete()
 
         print 'Gobbled %d messages' % message_count
