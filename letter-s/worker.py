@@ -3,9 +3,9 @@ import socket
 import sys
 import time
 
+from marconiclient import client
 import eventlet
 from eventlet import GreenPool
-from marconiclient import client
 
 
 def work_on_it(operation, operand):
@@ -99,7 +99,9 @@ if __name__ == "__main__":
                 work_item_count, int(time.time()))
             s.sendall(graphite_message)
 
-            eventlet.sleep(1 - (time.time() - start_time))
+            elapsed_time = time.time() - start_time
+            sleep_time = max(1 - (elapsed_time), 0)
+            eventlet.sleep(sleep_time)
 
         s.close()
 
@@ -123,7 +125,7 @@ if __name__ == "__main__":
             claim = queue_tasks.claim(ttl=60, grace=60)
 
             if len(claim.messages) == 0:
-                time.sleep(1)
+                eventlet.sleep(1)
                 continue
 
             for msg in claim.messages:
