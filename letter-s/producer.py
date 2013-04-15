@@ -37,8 +37,10 @@ if __name__ == "__main__":
 
                 if len(messages) > 0:
                     last_message = messages[-1]
-                    rate = last_message['body']['rate']
-                    ttl = last_message['body']['ttl']
+                    rate = int(last_message['body']['rate'])
+                    ttl = int(last_message['body']['ttl'])
+
+                    print 'New control message: rate=%d, ttl=%d' % (rate, ttl)
             except Exception as ex:
                 print ex
 

@@ -72,10 +72,13 @@ if __name__ == "__main__":
 
                 if len(messages) > 0:
                     last_message = messages[-1]
-                    ttl = last_message['body']['ttl']
-                    reset_count = last_message['body']['work_item_count']
+                    ttl = int(last_message['body']['ttl'])
+                    reset_count = int(last_message['body']['work_item_count'])
                     if reset_count >= 0:
                         work_item_count = reset_count
+
+                    print 'New control message: ttl=%d, work_item_count=%d' % \
+                          (ttl, reset_count)
             except Exception as ex:
                 print ex
 
