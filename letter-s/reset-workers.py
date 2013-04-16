@@ -7,10 +7,11 @@ import optparse
 def main():
     parser = optparse.OptionParser()
     parser.add_option('--ip', '-I', default = '166.78.143.130')
+    parser.add_option('--ttl', '-t', default = 60)
     options, arguments = parser.parse_args()
 
     command_msg_ttl = 60
-    worker_msg_ttl = 60
+    worker_msg_ttl = options.ttl
     work_item_count = 0
     ip_address = options.ip
 
