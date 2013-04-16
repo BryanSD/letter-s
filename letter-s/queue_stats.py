@@ -26,17 +26,17 @@ if __name__ == "__main__":
     while True:
         try:
             task_message_stats = queue_tasks.get_stats().messages
-            tasks = task_message_stats['total']
-            tasks_expired = task_message_stats['expired']
+            tasks_claimed = task_message_stats['claimed']
+            tasks_free = task_message_stats['free']
             graphite_message = 'openstack.queue.work.count %d %d\n' % (
-                tasks - tasks_expired, int(time.time()))
+                tasks_claimed + tasks_free, int(time.time()))
             s.sendall(graphite_message)
 
             response_message_stats = queue_responses.get_stats().messages
-            responses = response_message_stats['total']
-            responses_expired = response_message_stats['expired']
+            responses_claimed = response_message_stats['claimed']
+            responses_free = response_message_stats['free']
             graphite_message = 'openstack.queue.result.count %d %d\n' % (
-                responses - responses_expired, int(time.time()))
+                responses_claimed + responses_free, int(time.time()))
             s.sendall(graphite_message)
         except Exception as ex:
             print ex
